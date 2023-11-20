@@ -11,8 +11,8 @@ import (
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/fatih/color"
-	"github.com/hibiken/asynq"
-	"github.com/hibiken/asynq/internal/errors"
+	"github.com/SmileHasFame/asynq"
+	"github.com/SmileHasFame/asynq/internal/errors"
 	"github.com/spf13/cobra"
 )
 

@@ -15,10 +15,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/hibiken/asynq/internal/base"
-	"github.com/hibiken/asynq/internal/errors"
-	h "github.com/hibiken/asynq/internal/testutil"
-	"github.com/hibiken/asynq/internal/timeutil"
+	"github.com/SmileHasFame/asynq/internal/base"
+	"github.com/SmileHasFame/asynq/internal/errors"
+	h "github.com/SmileHasFame/asynq/internal/testutil"
+	"github.com/SmileHasFame/asynq/internal/timeutil"
 	"github.com/redis/go-redis/v9"
 )
 
