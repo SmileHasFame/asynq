@@ -1,4 +1,4 @@
-module github.com/hibiken/asynq/tools
+module github.com/SmileHasFame/asynq/tools
 
 go 1.18
 
