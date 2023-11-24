@@ -11,11 +11,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/go-redis/redis/v8"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/SmileHasFame/asynq/internal/log"
-	h "github.com/SmileHasFame/asynq/internal/testutil"
+	"github.com/hibiken/asynq/internal/log"
+	h "github.com/hibiken/asynq/internal/testutil"
 )
 
 //============================================================================
@@ -143,9 +143,9 @@ func TestParseRedisURI(t *testing.T) {
 		{
 			"redis-sentinel://:mypassword@localhost:5000,localhost:5001,localhost:5002?master=mymaster",
 			RedisFailoverClientOpt{
-				MasterName:       "mymaster",
-				SentinelAddrs:    []string{"localhost:5000", "localhost:5001", "localhost:5002"},
-				SentinelPassword: "mypassword",
+				MasterName:    "mymaster",
+				SentinelAddrs: []string{"localhost:5000", "localhost:5001", "localhost:5002"},
+				Password:      "mypassword",
 			},
 		},
 	}

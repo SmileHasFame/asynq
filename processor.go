@@ -16,11 +16,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SmileHasFame/asynq/internal/base"
-	asynqcontext "github.com/SmileHasFame/asynq/internal/context"
-	"github.com/SmileHasFame/asynq/internal/errors"
-	"github.com/SmileHasFame/asynq/internal/log"
-	"github.com/SmileHasFame/asynq/internal/timeutil"
+	"github.com/hibiken/asynq/internal/base"
+	asynqcontext "github.com/hibiken/asynq/internal/context"
+	"github.com/hibiken/asynq/internal/errors"
+	"github.com/hibiken/asynq/internal/log"
+	"github.com/hibiken/asynq/internal/timeutil"
 	"golang.org/x/time/rate"
 )
 
@@ -40,7 +40,8 @@ type processor struct {
 	retryDelayFunc RetryDelayFunc
 	isFailureFunc  func(error) bool
 
-	errHandler      ErrorHandler
+	errHandler ErrorHandler
+
 	shutdownTimeout time.Duration
 
 	// channel via which to send sync requests to syncer.
@@ -412,9 +413,7 @@ func (p *processor) queues() []string {
 func (p *processor) perform(ctx context.Context, task *Task) (err error) {
 	defer func() {
 		if x := recover(); x != nil {
-			errMsg := string(debug.Stack())
-
-			p.logger.Errorf("recovering from panic. See the stack trace below for details:\n%s", errMsg)
+			p.logger.Errorf("recovering from panic. See the stack trace below for details:\n%s", string(debug.Stack()))
 			_, file, line, ok := runtime.Caller(1) // skip the first frame (panic itself)
 			if ok && strings.Contains(file, "runtime/") {
 				// The panic came from the runtime, most likely due to incorrect
@@ -427,9 +426,6 @@ func (p *processor) perform(ctx context.Context, task *Task) (err error) {
 				err = fmt.Errorf("panic [%s:%d]: %v", file, line, x)
 			} else {
 				err = fmt.Errorf("panic: %v", x)
-			}
-			err = &errors.PanicError{
-				ErrMsg: errMsg,
 			}
 		}
 	}()
@@ -524,8 +520,4 @@ func (p *processor) computeDeadline(msg *base.TaskMessage) time.Time {
 		return p.clock.Now().Add(time.Duration(msg.Timeout) * time.Second)
 	}
 	return time.Unix(msg.Deadline, 0)
-}
-
-func IsPanicError(err error) bool {
-	return errors.IsPanicError(err)
 }

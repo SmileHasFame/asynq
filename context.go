@@ -7,7 +7,7 @@ package asynq
 import (
 	"context"
 
-	asynqcontext "github.com/SmileHasFame/asynq/internal/context"
+	asynqcontext "github.com/hibiken/asynq/internal/context"
 )
 
 // GetTaskID extracts a task ID from a context, if any.
@@ -28,7 +28,7 @@ func GetRetryCount(ctx context.Context) (n int, ok bool) {
 
 // GetMaxRetry extracts maximum retry from a context, if any.
 //
-// Return value n indicates the maximum number of times the associated task
+// Return value n indicates the maximum number of times the assoicated task
 // can be retried if ProcessTask returns a non-nil error.
 func GetMaxRetry(ctx context.Context) (n int, ok bool) {
 	return asynqcontext.GetMaxRetry(ctx)

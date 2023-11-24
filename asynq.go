@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redis/go-redis/v9"
-	"github.com/SmileHasFame/asynq/internal/base"
+	"github.com/go-redis/redis/v8"
+	"github.com/hibiken/asynq/internal/base"
 )
 
 // Task represents a unit of work to be performed.
@@ -201,7 +201,7 @@ const (
 	// Indicates that the task is processed successfully and retained until the retention TTL expires.
 	TaskStateCompleted
 
-	// Indicates that the task is waiting in a group to be aggregated into one task.
+	// Indicates that the task is waiting in a group to be aggreated into one task.
 	TaskStateAggregating
 )
 
@@ -519,7 +519,7 @@ func parseRedisSentinelURI(u *url.URL) (RedisConnOpt, error) {
 	if v, ok := u.User.Password(); ok {
 		password = v
 	}
-	return RedisFailoverClientOpt{MasterName: master, SentinelAddrs: addrs, SentinelPassword: password}, nil
+	return RedisFailoverClientOpt{MasterName: master, SentinelAddrs: addrs, Password: password}, nil
 }
 
 // ResultWriter is a client interface to write result data for a task.

@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
-	"github.com/SmileHasFame/asynq/internal/base"
-	"github.com/SmileHasFame/asynq/internal/errors"
-	"github.com/SmileHasFame/asynq/internal/rdb"
+	"github.com/hibiken/asynq/internal/base"
+	"github.com/hibiken/asynq/internal/errors"
+	"github.com/hibiken/asynq/internal/rdb"
 )
 
 // A Client is responsible for scheduling tasks.
@@ -237,7 +237,7 @@ func composeOptions(opts ...Option) (option, error) {
 		retry:     defaultMaxRetry,
 		queue:     base.DefaultQueueName,
 		taskID:    uuid.NewString(),
-		timeout:   0, // do not set to defaultTimeout here
+		timeout:   0, // do not set to deafultTimeout here
 		deadline:  time.Time{},
 		processAt: time.Now(),
 	}
@@ -317,7 +317,7 @@ func (c *Client) Close() error {
 // The argument opts specifies the behavior of task processing.
 // If there are conflicting Option values the last one overrides others.
 // Any options provided to NewTask can be overridden by options passed to Enqueue.
-// By default, max retry is set to 25 and timeout is set to 30 minutes.
+// By deafult, max retry is set to 25 and timeout is set to 30 minutes.
 //
 // If no ProcessAt or ProcessIn options are provided, the task will be pending immediately.
 //
@@ -333,7 +333,7 @@ func (c *Client) Enqueue(task *Task, opts ...Option) (*TaskInfo, error) {
 // The argument opts specifies the behavior of task processing.
 // If there are conflicting Option values the last one overrides others.
 // Any options provided to NewTask can be overridden by options passed to Enqueue.
-// By default, max retry is set to 25 and timeout is set to 30 minutes.
+// By deafult, max retry is set to 25 and timeout is set to 30 minutes.
 //
 // If no ProcessAt or ProcessIn options are provided, the task will be pending immediately.
 //

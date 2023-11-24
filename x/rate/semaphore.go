@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/SmileHasFame/asynq"
-	asynqcontext "github.com/SmileHasFame/asynq/internal/context"
+	"github.com/hibiken/asynq"
+	asynqcontext "github.com/hibiken/asynq/internal/context"
 )
 
 // NewSemaphore creates a counting Semaphore for the given scope with the given number of tokens.

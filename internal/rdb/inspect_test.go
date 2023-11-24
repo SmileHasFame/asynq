@@ -12,14 +12,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/SmileHasFame/asynq/internal/base"
-	"github.com/SmileHasFame/asynq/internal/errors"
-	h "github.com/SmileHasFame/asynq/internal/testutil"
-	"github.com/SmileHasFame/asynq/internal/timeutil"
-	"github.com/redis/go-redis/v9"
+	"github.com/hibiken/asynq/internal/base"
+	"github.com/hibiken/asynq/internal/errors"
+	h "github.com/hibiken/asynq/internal/testutil"
+	"github.com/hibiken/asynq/internal/timeutil"
 )
 
 func TestAllQueues(t *testing.T) {
@@ -73,11 +73,11 @@ func TestCurrentStats(t *testing.T) {
 		allGroups                       map[string][]string
 		pending                         map[string][]string
 		active                          map[string][]string
-		scheduled                       map[string][]redis.Z
-		retry                           map[string][]redis.Z
-		archived                        map[string][]redis.Z
-		completed                       map[string][]redis.Z
-		groups                          map[string][]redis.Z
+		scheduled                       map[string][]*redis.Z
+		retry                           map[string][]*redis.Z
+		archived                        map[string][]*redis.Z
+		completed                       map[string][]*redis.Z
+		groups                          map[string][]*redis.Z
 		processed                       map[string]int
 		failed                          map[string]int
 		processedTotal                  map[string]int
@@ -111,7 +111,7 @@ func TestCurrentStats(t *testing.T) {
 				base.ActiveKey("critical"): {},
 				base.ActiveKey("low"):      {},
 			},
-			scheduled: map[string][]redis.Z{
+			scheduled: map[string][]*redis.Z{
 				base.ScheduledKey("default"): {
 					{Member: m3.ID, Score: float64(now.Add(time.Hour).Unix())},
 					{Member: m4.ID, Score: float64(now.Unix())},
@@ -119,22 +119,22 @@ func TestCurrentStats(t *testing.T) {
 				base.ScheduledKey("critical"): {},
 				base.ScheduledKey("low"):      {},
 			},
-			retry: map[string][]redis.Z{
+			retry: map[string][]*redis.Z{
 				base.RetryKey("default"):  {},
 				base.RetryKey("critical"): {},
 				base.RetryKey("low"):      {},
 			},
-			archived: map[string][]redis.Z{
+			archived: map[string][]*redis.Z{
 				base.ArchivedKey("default"):  {},
 				base.ArchivedKey("critical"): {},
 				base.ArchivedKey("low"):      {},
 			},
-			completed: map[string][]redis.Z{
+			completed: map[string][]*redis.Z{
 				base.CompletedKey("default"):  {},
 				base.CompletedKey("critical"): {},
 				base.CompletedKey("low"):      {},
 			},
-			groups: map[string][]redis.Z{
+			groups: map[string][]*redis.Z{
 				base.GroupKey("default", "sms:user1"): {
 					{Member: m7.ID, Score: float64(now.Add(-3 * time.Second).Unix())},
 				},
@@ -205,7 +205,7 @@ func TestCurrentStats(t *testing.T) {
 				base.ActiveKey("critical"): {},
 				base.ActiveKey("low"):      {},
 			},
-			scheduled: map[string][]redis.Z{
+			scheduled: map[string][]*redis.Z{
 				base.ScheduledKey("default"): {
 					{Member: m3.ID, Score: float64(now.Add(time.Hour).Unix())},
 					{Member: m4.ID, Score: float64(now.Unix())},
@@ -213,17 +213,17 @@ func TestCurrentStats(t *testing.T) {
 				base.ScheduledKey("critical"): {},
 				base.ScheduledKey("low"):      {},
 			},
-			retry: map[string][]redis.Z{
+			retry: map[string][]*redis.Z{
 				base.RetryKey("default"):  {},
 				base.RetryKey("critical"): {},
 				base.RetryKey("low"):      {},
 			},
-			archived: map[string][]redis.Z{
+			archived: map[string][]*redis.Z{
 				base.ArchivedKey("default"):  {},
 				base.ArchivedKey("critical"): {},
 				base.ArchivedKey("low"):      {},
 			},
-			completed: map[string][]redis.Z{
+			completed: map[string][]*redis.Z{
 				base.CompletedKey("default"):  {},
 				base.CompletedKey("critical"): {},
 				base.CompletedKey("low"):      {},
@@ -250,7 +250,7 @@ func TestCurrentStats(t *testing.T) {
 			},
 			oldestPendingMessageEnqueueTime: map[string]time.Time{
 				"default":  now.Add(-15 * time.Second),
-				"critical": {}, // zero value since there's no pending task in this queue
+				"critical": time.Time{}, // zero value since there's no pending task in this queue
 				"low":      now.Add(-30 * time.Second),
 			},
 			paused: []string{"critical", "low"},
@@ -392,6 +392,7 @@ func TestHistoricalStats(t *testing.T) {
 			}
 		}
 	}
+
 }
 
 func TestRedisInfo(t *testing.T) {
@@ -435,7 +436,7 @@ func TestGroupStats(t *testing.T) {
 	fixtures := struct {
 		tasks     []*h.TaskSeedData
 		allGroups map[string][]string
-		groups    map[string][]redis.Z
+		groups    map[string][]*redis.Z
 	}{
 		tasks: []*h.TaskSeedData{
 			{Msg: m1, State: base.TaskStateAggregating},
@@ -448,7 +449,7 @@ func TestGroupStats(t *testing.T) {
 			base.AllGroups("default"): {"group1", "group2"},
 			base.AllGroups("custom"):  {"group1"},
 		},
-		groups: map[string][]redis.Z{
+		groups: map[string][]*redis.Z{
 			base.GroupKey("default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-10 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
@@ -486,7 +487,7 @@ func TestGroupStats(t *testing.T) {
 		},
 	}
 
-	sortGroupStatsOpt := cmp.Transformer(
+	var sortGroupStatsOpt = cmp.Transformer(
 		"SortGroupStats",
 		func(in []*GroupStat) []*GroupStat {
 			out := append([]*GroupStat(nil), in...)
@@ -1508,6 +1509,7 @@ func TestListCompleted(t *testing.T) {
 			continue
 		}
 	}
+
 }
 
 func TestListCompletedPagination(t *testing.T) {
@@ -1583,7 +1585,7 @@ func TestListAggregating(t *testing.T) {
 		tasks     []*h.TaskSeedData
 		allQueues []string
 		allGroups map[string][]string
-		groups    map[string][]redis.Z
+		groups    map[string][]*redis.Z
 	}{
 		tasks: []*h.TaskSeedData{
 			{Msg: m1, State: base.TaskStateAggregating},
@@ -1596,7 +1598,7 @@ func TestListAggregating(t *testing.T) {
 			base.AllGroups("default"): {"group1", "group2"},
 			base.AllGroups("custom"):  {"group3"},
 		},
-		groups: map[string][]redis.Z{
+		groups: map[string][]*redis.Z{
 			base.GroupKey("default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-30 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
@@ -1663,14 +1665,14 @@ func TestListAggregatingPagination(t *testing.T) {
 		tasks     []*h.TaskSeedData
 		allQueues []string
 		allGroups map[string][]string
-		groups    map[string][]redis.Z
+		groups    map[string][]*redis.Z
 	}{
 		tasks:     []*h.TaskSeedData{}, // will be populated below
 		allQueues: []string{"default"},
 		allGroups: map[string][]string{
 			base.AllGroups("default"): {"mygroup"},
 		},
-		groups: map[string][]redis.Z{
+		groups: map[string][]*redis.Z{
 			groupkey: {}, // will be populated below
 		},
 	}
@@ -1681,7 +1683,7 @@ func TestListAggregatingPagination(t *testing.T) {
 		fxt.tasks = append(fxt.tasks, &h.TaskSeedData{
 			Msg: msg, State: base.TaskStateAggregating,
 		})
-		fxt.groups[groupkey] = append(fxt.groups[groupkey], redis.Z{
+		fxt.groups[groupkey] = append(fxt.groups[groupkey], &redis.Z{
 			Member: msg.ID,
 			Score:  float64(now.Add(-time.Duration(100-i) * time.Second).Unix()),
 		})
@@ -1997,7 +1999,7 @@ func TestRunAggregatingTask(t *testing.T) {
 		tasks     []*h.TaskSeedData
 		allQueues []string
 		allGroups map[string][]string
-		groups    map[string][]redis.Z
+		groups    map[string][]*redis.Z
 	}{
 		tasks: []*h.TaskSeedData{
 			{Msg: m1, State: base.TaskStateAggregating},
@@ -2009,7 +2011,7 @@ func TestRunAggregatingTask(t *testing.T) {
 			base.AllGroups("default"): {"group1"},
 			base.AllGroups("custom"):  {"group1"},
 		},
-		groups: map[string][]redis.Z{
+		groups: map[string][]*redis.Z{
 			base.GroupKey("default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
@@ -2322,6 +2324,7 @@ func TestRunTaskError(t *testing.T) {
 			}
 		}
 	}
+
 }
 
 func TestRunAllScheduledTasks(t *testing.T) {
@@ -2688,7 +2691,7 @@ func TestRunAllAggregatingTasks(t *testing.T) {
 		tasks     []*h.TaskSeedData
 		allQueues []string
 		allGroups map[string][]string
-		groups    map[string][]redis.Z
+		groups    map[string][]*redis.Z
 	}{
 		tasks: []*h.TaskSeedData{
 			{Msg: m1, State: base.TaskStateAggregating},
@@ -2700,7 +2703,7 @@ func TestRunAllAggregatingTasks(t *testing.T) {
 			base.AllGroups("default"): {"group1"},
 			base.AllGroups("custom"):  {"group2"},
 		},
-		groups: map[string][]redis.Z{
+		groups: map[string][]*redis.Z{
 			base.GroupKey("default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
@@ -2998,7 +3001,7 @@ func TestArchiveAggregatingTask(t *testing.T) {
 		tasks     []*h.TaskSeedData
 		allQueues []string
 		allGroups map[string][]string
-		groups    map[string][]redis.Z
+		groups    map[string][]*redis.Z
 	}{
 		tasks: []*h.TaskSeedData{
 			{Msg: m1, State: base.TaskStateAggregating},
@@ -3010,7 +3013,7 @@ func TestArchiveAggregatingTask(t *testing.T) {
 			base.AllGroups("default"): {"group1"},
 			base.AllGroups("custom"):  {"group1"},
 		},
-		groups: map[string][]redis.Z{
+		groups: map[string][]*redis.Z{
 			base.GroupKey("default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
@@ -3332,7 +3335,6 @@ func TestArchiveTaskError(t *testing.T) {
 		}
 	}
 }
-
 func TestArchiveAllPendingTasks(t *testing.T) {
 	r := setup(t)
 	defer r.Close()
@@ -3483,7 +3485,7 @@ func TestArchiveAllAggregatingTasks(t *testing.T) {
 		tasks     []*h.TaskSeedData
 		allQueues []string
 		allGroups map[string][]string
-		groups    map[string][]redis.Z
+		groups    map[string][]*redis.Z
 	}{
 		tasks: []*h.TaskSeedData{
 			{Msg: m1, State: base.TaskStateAggregating},
@@ -3495,7 +3497,7 @@ func TestArchiveAllAggregatingTasks(t *testing.T) {
 			base.AllGroups("default"): {"group1"},
 			base.AllGroups("custom"):  {"group2"},
 		},
-		groups: map[string][]redis.Z{
+		groups: map[string][]*redis.Z{
 			base.GroupKey("default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
@@ -4122,7 +4124,7 @@ func TestDeleteAggregatingTask(t *testing.T) {
 		tasks     []*h.TaskSeedData
 		allQueues []string
 		allGroups map[string][]string
-		groups    map[string][]redis.Z
+		groups    map[string][]*redis.Z
 	}{
 		tasks: []*h.TaskSeedData{
 			{Msg: m1, State: base.TaskStateAggregating},
@@ -4134,7 +4136,7 @@ func TestDeleteAggregatingTask(t *testing.T) {
 			base.AllGroups("default"): {"group1"},
 			base.AllGroups("custom"):  {"group1"},
 		},
-		groups: map[string][]redis.Z{
+		groups: map[string][]*redis.Z{
 			base.GroupKey("default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
@@ -4756,7 +4758,7 @@ func TestDeleteAllAggregatingTasks(t *testing.T) {
 		tasks     []*h.TaskSeedData
 		allQueues []string
 		allGroups map[string][]string
-		groups    map[string][]redis.Z
+		groups    map[string][]*redis.Z
 	}{
 		tasks: []*h.TaskSeedData{
 			{Msg: m1, State: base.TaskStateAggregating},
@@ -4768,7 +4770,7 @@ func TestDeleteAllAggregatingTasks(t *testing.T) {
 			base.AllGroups("default"): {"group1"},
 			base.AllGroups("custom"):  {"group1"},
 		},
-		groups: map[string][]redis.Z{
+		groups: map[string][]*redis.Z{
 			base.GroupKey("default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},

@@ -12,17 +12,17 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/SmileHasFame/asynq/internal/base"
-	"github.com/SmileHasFame/asynq/internal/rdb"
-	"github.com/SmileHasFame/asynq/internal/testbroker"
-	h "github.com/SmileHasFame/asynq/internal/testutil"
-	"github.com/SmileHasFame/asynq/internal/timeutil"
+	"github.com/hibiken/asynq/internal/base"
+	"github.com/hibiken/asynq/internal/rdb"
+	"github.com/hibiken/asynq/internal/testbroker"
+	h "github.com/hibiken/asynq/internal/testutil"
+	"github.com/hibiken/asynq/internal/timeutil"
 )
 
 // Test goes through a few phases.
 //
 // Phase1: Simulate Server startup; Simulate starting tasks listed in startedWorkers
-// Phase2: Simulate finishing tasks listed in finishedTasks
+// Phase2: Simluate finishing tasks listed in finishedTasks
 // Phase3: Simulate Server shutdown;
 func TestHeartbeater(t *testing.T) {
 	r := setup(t)
@@ -41,7 +41,7 @@ func TestHeartbeater(t *testing.T) {
 	t5 := h.NewTaskMessageWithQueue("task5", nil, "custom")
 	t6 := h.NewTaskMessageWithQueue("task6", nil, "default")
 
-	// Note: intentionally set to time less than now.Add(rdb.LeaseDuration) to test lease extension is working.
+	// Note: intentionally set to time less than now.Add(rdb.LeaseDuration) to test lease extention is working.
 	lease1 := h.NewLeaseWithClock(now.Add(10*time.Second), clock)
 	lease2 := h.NewLeaseWithClock(now.Add(10*time.Second), clock)
 	lease3 := h.NewLeaseWithClock(now.Add(10*time.Second), clock)

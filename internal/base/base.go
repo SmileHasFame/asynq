@@ -14,16 +14,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/SmileHasFame/asynq/internal/errors"
-	pb "github.com/SmileHasFame/asynq/internal/proto"
-	"github.com/SmileHasFame/asynq/internal/timeutil"
-	"github.com/redis/go-redis/v9"
+	"github.com/hibiken/asynq/internal/errors"
+	pb "github.com/hibiken/asynq/internal/proto"
+	"github.com/hibiken/asynq/internal/timeutil"
 	"google.golang.org/protobuf/proto"
 )
 
 // Version of asynq library and CLI.
-const Version = "0.24.1"
+const Version = "0.23.0"
 
 // DefaultQueueName is the queue name used if none are specified by user.
 const DefaultQueueName = "default"
@@ -607,7 +607,7 @@ func DecodeSchedulerEnqueueEvent(b []byte) (*SchedulerEnqueueEvent, error) {
 
 // Cancelations is a collection that holds cancel functions for all active tasks.
 //
-// Cancelations are safe for concurrent use by multiple goroutines.
+// Cancelations are safe for concurrent use by multipel goroutines.
 type Cancelations struct {
 	mu          sync.Mutex
 	cancelFuncs map[string]context.CancelFunc
@@ -662,7 +662,7 @@ func NewLease(expirationTime time.Time) *Lease {
 	}
 }
 
-// Reset changes the lease to expire at the given time.
+// Reset chanegs the lease to expire at the given time.
 // It returns true if the lease is still valid and reset operation was successful, false if the lease had been expired.
 func (l *Lease) Reset(expirationTime time.Time) bool {
 	if !l.IsValid() {
@@ -700,7 +700,7 @@ func (l *Lease) Deadline() time.Time {
 	return l.expireAt
 }
 
-// IsValid returns true if the lease's expiration time is in the future or equals to the current time,
+// IsValid returns true if the lease's expieration time is in the future or equals to the current time,
 // returns false otherwise.
 func (l *Lease) IsValid() bool {
 	now := l.Clock.Now()

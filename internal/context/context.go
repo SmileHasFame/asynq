@@ -8,7 +8,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/SmileHasFame/asynq/internal/base"
+	"github.com/hibiken/asynq/internal/base"
 )
 
 // A taskMetadata holds task scoped data to put in context.
@@ -65,7 +65,7 @@ func GetRetryCount(ctx context.Context) (n int, ok bool) {
 
 // GetMaxRetry extracts maximum retry from a context, if any.
 //
-// Return value n indicates the maximum number of times the associated task
+// Return value n indicates the maximum number of times the assoicated task
 // can be retried if ProcessTask returns a non-nil error.
 func GetMaxRetry(ctx context.Context) (n int, ok bool) {
 	metadata, ok := ctx.Value(metadataCtxKey).(taskMetadata)

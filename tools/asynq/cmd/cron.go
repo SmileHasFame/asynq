@@ -11,8 +11,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/MakeNowJust/heredoc/v2"
-	"github.com/SmileHasFame/asynq"
+	"github.com/hibiken/asynq"
 	"github.com/spf13/cobra"
 )
 
@@ -25,30 +24,21 @@ func init() {
 }
 
 var cronCmd = &cobra.Command{
-	Use:   "cron <command> [flags]",
+	Use:   "cron",
 	Short: "Manage cron",
-	Example: heredoc.Doc(`
-		$ asynq cron ls
-		$ asynq cron history 7837f142-6337-4217-9276-8f27281b67d1`),
 }
 
 var cronListCmd = &cobra.Command{
-	Use:     "list",
-	Aliases: []string{"ls"},
-	Short:   "List cron entries",
-	Run:     cronList,
+	Use:   "ls",
+	Short: "List cron entries",
+	Run:   cronList,
 }
 
 var cronHistoryCmd = &cobra.Command{
-	Use:   "history <entry_id> [<entry_id>...]",
+	Use:   "history [ENTRY_ID...]",
 	Short: "Show history of each cron tasks",
 	Args:  cobra.MinimumNArgs(1),
 	Run:   cronHistory,
-	Example: heredoc.Doc(`
-		$ asynq cron history 7837f142-6337-4217-9276-8f27281b67d1
-		$ asynq cron history 7837f142-6337-4217-9276-8f27281b67d1 bf6a8594-cd03-4968-b36a-8572c5e160dd
-		$ asynq cron history 7837f142-6337-4217-9276-8f27281b67d1 --size=100
-		$ asynq cron history 7837f142-6337-4217-9276-8f27281b67d1 --page=2`),
 }
 
 func cronList(cmd *cobra.Command, args []string) {

@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SmileHasFame/asynq/internal/base"
-	"github.com/SmileHasFame/asynq/internal/log"
+	"github.com/hibiken/asynq/internal/base"
+	"github.com/hibiken/asynq/internal/log"
 )
 
 // healthchecker is responsible for pinging broker periodically

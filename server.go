@@ -15,10 +15,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/redis/go-redis/v9"
-	"github.com/SmileHasFame/asynq/internal/base"
-	"github.com/SmileHasFame/asynq/internal/log"
-	"github.com/SmileHasFame/asynq/internal/rdb"
+	"github.com/go-redis/redis/v8"
+	"github.com/hibiken/asynq/internal/base"
+	"github.com/hibiken/asynq/internal/log"
+	"github.com/hibiken/asynq/internal/rdb"
 )
 
 // Server is responsible for task processing and task lifecycle management.
@@ -162,16 +162,6 @@ type Config struct {
 	//     })
 	//
 	//     ErrorHandler: asynq.ErrorHandlerFunc(reportError)
-
-	//    we can also handle panic error like:
-	//     func reportError(ctx context, task *asynq.Task, err error) {
-	//         if asynq.IsPanic(err) {
-	//	          errorReportingService.Notify(err)
-	// 	       }
-	//     })
-	//
-	//     ErrorHandler: asynq.ErrorHandlerFunc(reportError)
-
 	ErrorHandler ErrorHandler
 
 	// Logger specifies the logger used by the server instance.
@@ -252,7 +242,7 @@ func (fn GroupAggregatorFunc) Aggregate(group string, tasks []*Task) *Task {
 	return fn(group, tasks)
 }
 
-// An ErrorHandler handles an error occurred during task processing.
+// An ErrorHandler handles an error occured during task processing.
 type ErrorHandler interface {
 	HandleError(ctx context.Context, task *Task, err error)
 }

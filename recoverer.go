@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SmileHasFame/asynq/internal/base"
-	"github.com/SmileHasFame/asynq/internal/errors"
-	"github.com/SmileHasFame/asynq/internal/log"
+	"github.com/hibiken/asynq/internal/base"
+	"github.com/hibiken/asynq/internal/errors"
+	"github.com/hibiken/asynq/internal/log"
 )
 
 type recoverer struct {
@@ -87,7 +87,7 @@ func (r *recoverer) recover() {
 }
 
 func (r *recoverer) recoverLeaseExpiredTasks() {
-	// Get all tasks which have expired 30 seconds ago or earlier to accommodate certain amount of clock skew.
+	// Get all tasks which have expired 30 seconds ago or earlier to accomodate certain amount of clock skew.
 	cutoff := time.Now().Add(-30 * time.Second)
 	msgs, err := r.broker.ListLeaseExpired(cutoff, r.queues...)
 	if err != nil {
